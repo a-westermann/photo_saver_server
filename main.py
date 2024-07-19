@@ -10,7 +10,7 @@ import zipfile
 
 path_to_photos = r'/home/andweste/AshleyPictures/'
 temp_photo_repo = 'photo_temp/'
-local_photo_repo = 'Photos/'
+local_photo_repo = 'AshleyPhotos/'
 log_file = 'log.txt'
 year_regex = '20[0-2][0-9]'
 
@@ -72,7 +72,7 @@ def get_exif_year(file_path: str) -> str | None:
 def archive_new_photo(photo_name: str, photo_year: str):
     # Archive the photo into the zip corresponding to the year it was taken
     # Also make the zip if it doesn't exist yet
-    zip_file = f'Photos/{photo_year}.zip'
+    zip_file = f'{local_photo_repo}/{photo_year}.zip'
     with zipfile.ZipFile(zip_file, 'a', compression=zipfile.ZIP_DEFLATED) as archive:
         archive.write(f'{temp_photo_repo}{photo_name}', photo_name)
 
@@ -89,7 +89,7 @@ if __name__ == '__main__':
     host_key = open("hostkey.ppk").read()
     host_key = str.encode(host_key)
     host_key = paramiko.RSAKey(data=decodebytes(host_key))
-    cnopts = pysftp.CnOpts()
+    cnopts = pysftp.CnOpts(knownhosts=None)
     cnopts.hostkeys.add(server.Host, 'ssh-rsa', host_key)
 
     with pysftp.Connection(server.Host, username=server.User, private_key="private_key.ppk", port=server.Port,
