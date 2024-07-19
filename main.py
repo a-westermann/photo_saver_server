@@ -74,7 +74,7 @@ def archive_new_photo(photo_name: str, photo_year: str):
     # Also make the zip if it doesn't exist yet
     zip_file = f'{local_photo_repo}/{photo_year}.zip'
     with zipfile.ZipFile(zip_file, 'a', compression=zipfile.ZIP_DEFLATED) as archive:
-        archive.write(f'{temp_photo_repo}{photo_name}', photo_name)
+        archive.write(f'{temp_photo_repo}{photo_name}', photo_name, compress_type=zipfile.ZIP_DEFLATED)
 
 
 if __name__ == '__main__':
