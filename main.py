@@ -9,7 +9,8 @@ import zipfile
 
 
 path_to_photos = r'/home/andweste/AshleyPictures/'
-local_photo_repo = 'photo_temp/'
+temp_photo_repo = 'photo_temp/'
+local_photo_repo = 'Photos/'
 log_file = 'log.txt'
 year_regex = '20[0-2][0-9]'
 
@@ -19,7 +20,7 @@ class Server:
         self.__dict__ = json.loads(json_string)
 
 
-def get_new_photos():
+def get_new_photos() -> list[str]:
     # Compile any new photos added by checking local storage for same name
     # This is safer than adding any in the last 24h b/c the app may crash at some point
     new_photo_files = []
@@ -27,10 +28,11 @@ def get_new_photos():
     dir_contents = sftp.execute(f"cd {path_to_photos} && ls")
     for file in dir_contents:
         file = file.strip().decode('utf-8')
-        if file not in os.listdir(local_photo_repo):
-            sftp.get(remotepath=f'{path_to_photos}{file}', localpath=f'{local_photo_repo}{file}')
+        if file not in os.listdir(temp_photo_repo):
+            sftp.get(remotepath=f'{path_to_photos}{file}', localpath=f'{temp_photo_repo}{file}')
             new_photo_files.append(file)
     log.write(f'\nDownloaded {len(new_photo_files)} new photos')
+    return new_photo_files
 
 
 def get_exif_year(file_path: str) -> str | None:
@@ -39,7 +41,9 @@ def get_exif_year(file_path: str) -> str | None:
     if year_search:
         return year_search.group()
 
-    # Didn't have the year in the file name. Try EXIF data
+    # Didn't have the year in the file name. Try EXIF data if it's a JPG/Jpeg
+    if not file_path.lower().endswith(('jpg', 'jpeg')):
+        return None
     file = open(file_path, 'rb')
     tags = exifread.process_file(file, details=True)
     for tag, val in tags.items():
@@ -52,11 +56,21 @@ def get_exif_year(file_path: str) -> str | None:
 
 
 
-def archive_new_photo(year: str):
-
+def archive_new_photo(photo_name: str, photo_year: str):
+    # Archive the photo into the zip corresponding to the year it was taken
+    # Also make the zip if it doesn't exist yet
+    zip_file = f'Photos/{photo_year}.zip'
+    with zipfile.ZipFile(zip_file, 'a', compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.write(f'{temp_photo_repo}{photo_name}', photo_name)
 
 
 if __name__ == '__main__':
+    # Set up directories
+    if not os.path.isdir(temp_photo_repo):
+        os.makedirs(temp_photo_repo)
+    if not os.path.isdir(local_photo_repo):
+        os.makedirs(local_photo_repo)
+
     # Connect SFTP, navigate to the photo directory
     server = Server(open('config.json').read())
     host_key = open("hostkey.ppk").read()
@@ -67,6 +81,8 @@ if __name__ == '__main__':
 
     with pysftp.Connection(server.Host, username=server.User, private_key="private_key.ppk", port=server.Port,
                            cnopts=cnopts) as sftp:
-        get_new_photos()
-        # archive_new_photos()
-        get_exif_year('photo_temp/ashleyw-2.jpg')
+        photos = get_new_photos()
+        for photo in photos:
+            photo_file_path = f'{temp_photo_repo}{photo}'
+            year = get_exif_year(photo_file_path)
+            archive_new_photo(photo, year)
