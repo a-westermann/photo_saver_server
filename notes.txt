@@ -1,0 +1,16 @@
+# Goals:
+    # Safe backup of photos
+    # Free up space on pi
+    # Easy retreival via phone? Maybe you run a command via ssh?
+
+# Methods:
+    # SFTP connect to server
+    # Copy any new files to local storage
+    # Unzip and then rezip the local archive w/ new photos added
+    # Create the archives by year. e.g., photos from 2020 go in one archive, 2021 is a new one
+    # Add a polled folder on the local machine that user can drop files into & it will transfer them to the server
+        # This is to allow retreival via phone app
+
+# Phase 2:
+    # Delete photos older than x
+    # Check server storage and delete files (oldest first) to get to x% available
