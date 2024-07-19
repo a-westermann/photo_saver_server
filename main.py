@@ -27,14 +27,14 @@ def get_new_photos() -> dict[str, str]:
     log = open(log_file, 'a')
     dir_contents = sftp.execute(f"cd {path_to_photos} && ls")
     for file in dir_contents:
-        if not os.path.isfile(file):
+        file = file.strip().decode('utf-8')
+        if sftp.isdir(f'{path_to_photos}{file}'):
             # someone moved a folder/gallery onto the server
             # I could add logic to iterate through directories (galleries) until finding the photos
             # For now, just log the event and move on
             log.write(f'\nError: A directory was added to the server: {file}. Right now only individual photos '
                       f'are supported. Please remove the gallery and upload the photos inside instead.')
             continue
-        file = file.strip().decode('utf-8')
         # Grab the year of the photo so we know which zip to check. And which to add it to if it's a new photo
         photo_year = get_exif_year(f'{path_to_photos}{file}')
 
