@@ -12,5 +12,5 @@
         # This is to allow retreival via phone app
 
 # Phase 2:
-    # Delete photos older than x
+    # Delete photos on the pi older than x. They will exist on the local storage
     # Check server storage and delete files (oldest first) to get to x% available

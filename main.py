@@ -20,17 +20,31 @@ class Server:
         self.__dict__ = json.loads(json_string)
 
 
-def get_new_photos() -> list[str]:
+def get_new_photos() -> dict():
     # Compile any new photos added by checking local storage for same name
     # This is safer than adding any in the last 24h b/c the app may crash at some point
-    new_photo_files = []
+    new_photo_files = dict()
     log = open(log_file, 'a')
     dir_contents = sftp.execute(f"cd {path_to_photos} && ls")
     for file in dir_contents:
         file = file.strip().decode('utf-8')
-        if file not in os.listdir(temp_photo_repo):
+        # Grab the year of the photo so we know which zip to check. And which to add it to if it's a new photo
+        photo_year = get_exif_year(f'{path_to_photos}{file}')
+
+        download_photo = False
+        if not os.path.isfile(f'{local_photo_repo}/{photo_year}.zip'):
+            # Archive for this year doesn't exist yet. Photo is good to download
+            download_photo = True
+        else:
+            with zipfile.ZipFile(f'{local_photo_repo}/{photo_year}.zip', 'r') as year_zip:
+                if file not in year_zip.namelist():
+                    # Archive for this year exists and this photo is not in it yet. Download it
+                    download_photo = True
+
+        if download_photo:
             sftp.get(remotepath=f'{path_to_photos}{file}', localpath=f'{temp_photo_repo}{file}')
-            new_photo_files.append(file)
+            new_photo_files[file] = photo_year
+
     log.write(f'\nDownloaded {len(new_photo_files)} new photos')
     return new_photo_files
 
@@ -42,9 +56,9 @@ def get_exif_year(file_path: str) -> str | None:
         return year_search.group()
 
     # Didn't have the year in the file name. Try EXIF data if it's a JPG/Jpeg
-    if not file_path.lower().endswith(('jpg', 'jpeg')):
+    if not (file_path.lower().__contains__('jpg') or file_path.lower().__contains__('jpeg')):
         return None
-    file = open(file_path, 'rb')
+    file = sftp.open(file_path, 'rb')
     tags = exifread.process_file(file, details=True)
     for tag, val in tags.items():
         if "date" in str(tag).lower():
@@ -53,7 +67,6 @@ def get_exif_year(file_path: str) -> str | None:
                 return year_search.group()
 
     return None
-
 
 
 def archive_new_photo(photo_name: str, photo_year: str):
@@ -81,8 +94,10 @@ if __name__ == '__main__':
 
     with pysftp.Connection(server.Host, username=server.User, private_key="private_key.ppk", port=server.Port,
                            cnopts=cnopts) as sftp:
-        photos = get_new_photos()
-        for photo in photos:
-            photo_file_path = f'{temp_photo_repo}{photo}'
-            year = get_exif_year(photo_file_path)
+        photo_year_dict = get_new_photos()
+        for photo, year in photo_year_dict.items():
             archive_new_photo(photo, year)
+
+    # clean up the temp directory
+    for temp_file in os.listdir(temp_photo_repo):
+        os.remove(f'{temp_photo_repo}{temp_file}')
