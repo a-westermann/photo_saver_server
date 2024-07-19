@@ -20,7 +20,7 @@ class Server:
         self.__dict__ = json.loads(json_string)
 
 
-def get_new_photos() -> dict():
+def get_new_photos() -> dict[str, str]:
     # Compile any new photos added by checking local storage for same name
     # This is safer than adding any in the last 24h b/c the app may crash at some point
     new_photo_files = dict()
@@ -74,7 +74,7 @@ def archive_new_photo(photo_name: str, photo_year: str):
     # Also make the zip if it doesn't exist yet
     zip_file = f'{local_photo_repo}/{photo_year}.zip'
     with zipfile.ZipFile(zip_file, 'a', compression=zipfile.ZIP_DEFLATED) as archive:
-        archive.write(f'{temp_photo_repo}{photo_name}', photo_name)
+        archive.write(f'{temp_photo_repo}{photo_name}', photo_name, compress_type=zipfile.ZIP_DEFLATED)
 
 
 if __name__ == '__main__':
