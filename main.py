@@ -41,7 +41,7 @@ def get_exif_year(file_path: str) -> str | None:
 
     # Didn't have the year in the file name. Try EXIF data
     file = open(file_path, 'rb')
-    tags = exifread.process_file(file, details=True)#, stop_tag='DateTimeOriginal')
+    tags = exifread.process_file(file, details=True)
     for tag, val in tags.items():
         if "date" in str(tag).lower():
             year_search = re.search(year_regex, str(val))
@@ -52,7 +52,7 @@ def get_exif_year(file_path: str) -> str | None:
 
 
 
-# def archive_new_photos():
+def archive_new_photo(year: str):
 
 
 
