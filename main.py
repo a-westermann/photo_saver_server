@@ -57,9 +57,10 @@ def get_new_photos() -> dict[str, str]:
     return new_photo_files
 
 
-def delete_photo(path: str, progressBytes: int, totalSize: int) -> None:
-    if progressBytes % totalSize == 0:
+def delete_photo(path: str, progress_bytes: int, total_size: int) -> None:
+    if progress_bytes % totalSize == 0:
         sftp.remove(path)
+
 
 def get_exif_year(file_path: str) -> str | None:
     # First just try to grab the date from the file name
