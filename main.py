@@ -49,12 +49,17 @@ def get_new_photos() -> dict[str, str]:
                     download_photo = True
 
         if download_photo:
-            sftp.get(remotepath=f'{path_to_photos}{file}', localpath=f'{temp_photo_repo}{file}')
+            sftp.get(remotepath=f'{path_to_photos}{file}', localpath=f'{temp_photo_repo}{file}',
+                     callback=lambda x, y: delete_photo(f'{path_to_photos}{file}', x, y))
             new_photo_files[file] = photo_year
 
     log.write(f'\nDownloaded {len(new_photo_files)} new photos')
     return new_photo_files
 
+
+def delete_photo(path: str, progressBytes: int, totalSize: int) -> None:
+    if progressBytes % totalSize == 0:
+        sftp.remove(path)
 
 def get_exif_year(file_path: str) -> str | None:
     # First just try to grab the date from the file name
