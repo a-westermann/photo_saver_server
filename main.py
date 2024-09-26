@@ -1,3 +1,4 @@
+from datetime import datetime
 import pysftp
 import json
 import paramiko
@@ -53,12 +54,12 @@ def get_new_photos() -> dict[str, str]:
                      callback=lambda x, y: delete_photo(f'{path_to_photos}{file}', x, y))
             new_photo_files[file] = photo_year
 
-    log.write(f'\nDownloaded {len(new_photo_files)} new photos')
+    log.write(f'\n{datetime.now()}: Downloaded {len(new_photo_files)} new photos')
     return new_photo_files
 
 
 def delete_photo(path: str, progress_bytes: int, total_size: int) -> None:
-    if progress_bytes % totalSize == 0:
+    if progress_bytes % total_size == 0:
         sftp.remove(path)
 
 
